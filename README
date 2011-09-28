@@ -1,0 +1,89 @@
+Serialize HTML controls in any HTML container not compulsorily a form element
+
+
+Sampson Orson Jackson
+sampson.orson@colourblendcreative.com
+
+28.09.2011
+
+serializeControls.js: As we know, to serialize HTML controls, it has to be within 
+the context of a form element and be initiated by a submit button. Many developers 
+working with php may not pinched by that constraint, but a .Net developer; where 
+we can't have more than one form element nested on the same page and with the use 
+of Master Pages you can't avoid it.
+
+This control allows you to have virtual forms (as divs, span, ...) that can 
+contain HTML controls. The plugin by default returns a mapped serialize object, like;
+
+[{"name":"Fname","value":""}]
+
+and by setting the option "json" to true you can have to result look like;
+
+{"Fname":""}
+
+You can also specify another property "propertykey" to the name of a custom attribute 
+to be specified on each HTML control within the container. This will ensure you have 
+user friendly names like; 
+
+"firstname" 
+
+instead of 
+
+"_ctl45__ctl0__ctl0_cntrlEmplRgstrtnFrm__ctl0_txtFirstName"
+
+as we get in .Net. It can also be useful to non-asp.net developers that user naming 
+conventions for their controls and don't want their JSON propery name to contain those.
+
+Note: You can also use the json2.js (https://github.com/douglascrockford/JSON-js/blob/master/json2.js) 
+to convert the return object to a JSON string and to parse it back if you want to. Also see how the 
+"propertykey" option is used in the input element "Fname".
+
+Example 
+
+**** HTML
+
+	<div id="myFormContainer" name="myFormContainer">
+        First Name:<input type="text" name="Fname" maxlength="12" key="firstname" size="12"/> <br/>
+        
+        Last Name:<input type="text" name="Lname" maxlength="36" size="12"/> <br/>
+        
+        Gender:<br/>
+            Male:<input type="radio" name="gender" value="Male"/><br/>
+            Female:<input type="radio" name="gender" value="Female"/><br/>
+
+        Favorite Food:<br/>
+            Steak:<input type="checkbox" name="food[]" value="Steak"/><br/>
+            Pizza:<input type="checkbox" name="food[]" value="Pizza"/><br/>
+            Chicken:<input type="checkbox" name="food[]" value="Chicken"/><br/>
+
+        <textarea wrap="physical" cols="20" name="quote" rows="5">Enter your favorite quote!</textarea><br/>
+
+        Select a Level of Education:<br/>
+        <select name="education">
+            <option value="Jr.High">Jr.High</option>
+            <option value="HighSchool">HighSchool</option>
+            <option value="College">College</option>
+        </select><br/>
+        
+        Select your favorite time of day:<br/>
+        <select size="3" name="TofD">
+            <option value="Morning">Morning</option>
+            <option value="Day">Day</option>
+            <option value="Night">Night</option>
+        </select>
+        
+        <p><input type="button" class="mybutton" /></p>
+    </div>
+
+	
+***** jQuery 
+
+	$(".mybutton").click(function() {
+		//$("#myFormContainer").serializeControls();
+		var rtVal = $("#myFormContainer").serializeControls({
+			"propertykey": "key",
+			"json": true
+		});
+		
+		console.log(JSON.stringify(rtVal));
+	});
