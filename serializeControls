@@ -1,0 +1,184 @@
+/*
+    Written by Sampson Orson Jackson of http://www.colourblendcreative.com/
+    
+    http://www.colourblendcreative.com/plugins/serialize-html-controls-within-any-html-element/
+    
+    28/09/2011
+
+    Public Domain.
+
+    NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
+
+    USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
+    NOT CONTROL.
+
+    This is a reference implementation. You are free to copy, modify, or
+    redistribute.
+*/
+
+(function($) {
+    "use strict";
+    
+    var settings = {
+        "propertykey" : "key",
+        "json": false
+    };
+    
+    var rCRLF = /\r?\n/g;
+    var rinput = /^(?:color|date|datetime|datetime-local|email|hidden|month|number|password|range|search|tel|text|time|url|week)$/i;
+    
+    var methods = {
+        init: function(options) {        
+            var result = null;
+            
+            //Get options
+            var $options = $.extend({}, settings, options);
+        
+            if (this.length == 1) {
+                this.each(function() {
+                    var $this = $(this); //The Container
+                    var $data = $this.data('sc');
+                    var $children = null;
+                    var $jsonString = "";
+                    
+                    //If the plugin hasn't been init
+                    if (!$data) {
+                        $(this).data('sc', {target: $this});
+                    }
+                    
+                    
+                    
+                    $children = methods.getChildren($this);
+                    
+                    
+                    result = $this.map(function() {
+                        return $children.length > 0 ? $.makeArray($children) : $this;
+                    }).filter(function(index, element) {
+                        return element.name && !element.disabled && (element.checked || $(element).is('textarea') || 
+                                        $(element).is('select') || rinput.test(element.type));
+                    }).map(function(index, element) {
+			            var val = $(this).val();
+			            var key = $(element).attr($options.propertykey);
+                        
+                        if (val == null) {
+                            return null;
+                        } else if ($.isArray(element)) {
+                            $.map( val, function( val, i ){
+                                if (key == undefined) {
+                                    return { name: elem.name, value: val.replace( rCRLF, "\r\n" ) };
+                                } else {
+                                    return { name: key, value: val.replace( rCRLF, "\r\n" ) };
+                                }
+					        })
+                        } else {
+                            if (key == undefined) {
+                                return {name: element.name, value: val.replace(/\r?\n/g, "\r\n")};
+                            } else {
+                                return {name: key, value: val.replace(/\r?\n/g, "\r\n")};
+                            }
+                        }
+                    }).get();
+                    
+                    
+
+                }); //End each element in the selector
+                
+                if ($options.json) {                
+                    return methods.serializeControlsToJSONObject(result);
+                } 
+            } else {
+                $.error("SerializeControl doesn't support multiple form serialization!");
+            }
+            
+            return result;
+        },
+        serializeControlsToJSONObject: function(obj) {
+            var o = {};
+            
+            $.each(obj, function(i, elem) {
+               if (o[elem.name]) {  
+                   if (!o[elem.name].push) {  
+                       o[elem.name] = [o[elem.name]];  
+                   }  
+                   o[elem.name].push(elem.value || '');  
+               } else {  
+                   o[elem.name] = elem.value || '';  
+               }  
+            });
+            
+            return o;
+        },
+        size: function(array) {
+            var size = 0, key;
+            for (key in array) {
+                if (array.hasOwnProperty(key)) size++;
+            }
+            
+            return size;
+        },
+        getChildren: function(container) {
+            
+            //Get the children in the container
+            var _children = $(container).find("*");
+            
+            _children = _children.filter(function(index, element) {
+                return element.name && !element.disabled && 
+                        (element.checked || $(element).is('textarea') || $(element).is('input') || $(element).is('select'));
+            });
+            
+            var items = new Array();
+            var groupElem = null; 
+            
+            
+            
+            _children.each(function(index, element) {
+                var name = element.name;
+                var type = element.type || element.tagName;
+                type = type.toLowerCase();
+                
+                switch (type) {
+                    case 'radio':
+                    case 'checkbox':
+                    case 'select-multiple':
+                    case 'select':
+                    case 'select-one':
+                    case 'text':
+                    case 'hidden':
+                    case 'textarea':
+                    case 'submit':
+                    case 'button': {                        
+                        items.push(element); break;
+                    }
+                }
+
+            });
+            
+            return methods.tojQueryObject(items);
+        },
+        tojQueryObject: function(array) {
+            var a = new Array();
+            
+            for (var i in array) {
+                a.push(array[i]);
+            }
+        
+            return $(a);
+        },
+        destroy: function() {
+            /*return this.each(function() {
+                alert('destroy');
+            });*/
+        }
+    };
+    
+    $.fn.serializeControls = function(method) {    
+        if (typeof method === 'object' || !method) {
+            return methods.init.apply(this, arguments);
+        } else if (methods[method]) {
+            return methods[method].apply(this, Array.prototype.slice.call(arguments, 1));
+        } else {
+            $.error("Method " + method + " doesn'texist on jQuery.serializeControls");
+        }
+    };
+
+})(jQuery);
